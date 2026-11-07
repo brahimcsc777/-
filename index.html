@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rainbet Simulator</title>
+    <style>
+        /* RAINBET THEME VARIABLES */
+        :root {
+            --bg-dark: #0f1219;
+            --bg-panel: #1a202e;
+            --bg-sidebar: #131721;
+            --primary: #00e701;
+            --accent: #263344;
+            --text-main: #ffffff;
+            --text-dim: #8892a3;
+        }
+        body { margin: 0; background-color: var(--bg-dark); font-family: 'Inter', system-ui, sans-serif; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid #232936; display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; }
+        .logo { font-size: 26px; font-weight: 800; color: white; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo span { color: var(--primary); }
+        .nav-item { padding: 12px 15px; color: var(--text-dim); text-decoration: none; font-weight: 600; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover, .nav-item.active { background: var(--bg-panel); color: white; }
+
+        /* MAIN CONTENT */
+        .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        /* HEADER */
+        header { height: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 0 30px; background: var(--bg-sidebar); border-bottom: 1px solid #232936; }
+        .wallet { background: var(--bg-panel); padding: 8px 16px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; gap: 10px; border: 1px solid var(--accent); }
+        .wallet-btn { background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 14px; }
+        
+        /* LOBBY GRID */
+        .content { padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        h2 { margin-bottom: 20px; font-size: 20px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .game-card { background: var(--bg-panel); height: 180px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-decoration: none; color: white; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent; position: relative; overflow: hidden; }
+        .game-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(0, 231, 1, 0.1); }
+        .game-icon { font-size: 48px; margin-bottom: 15px; }
+        .game-name { font-weight: 700; font-size: 18px; }
+
+        /* MODAL */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; }
+        .modal-box { background: var(--bg-panel); padding: 30px; border-radius: 12px; width: 300px; text-align: center; border: 1px solid var(--accent); }
+        input { background: var(--bg-dark); border: 1px solid var(--accent); padding: 12px; width: 100%; color: white; border-radius: 6px; box-sizing: border-box; margin: 15px 0; outline: none; }
+        .btn-action { width: 100%; padding: 12px; background: var(--primary); color: black; font-weight: 800; border: none; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item active">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item">💎 Mines</a>
+        <a href="plinko.html" class="nav-item">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item">🧱 Stack</a>
+    </div>
+
+    <div class="main">
+        <header>
+            <div class="wallet">
+                <span id="balance">$0.00</span>
+                <button class="wallet-btn" onclick="openModal()">+</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <h2>Rainbet Originals</h2>
+            <div class="games-grid">
+                <a href="blackjack.html" class="game-card">
+                    <div class="game-icon">♠️</div>
+                    <div class="game-name">Blackjack</div>
+                </a>
+                <a href="mines.html" class="game-card">
+                    <div class="game-icon">💎</div>
+                    <div class="game-name">Mines</div>
+                </a>
+                <a href="plinko.html" class="game-card">
+                    <div class="game-icon">🔻</div>
+                    <div class="game-name">Plinko</div>
+                </a>
+                <a href="chicken.html" class="game-card">
+                    <div class="game-icon">🐔</div>
+                    <div class="game-name">Chicken</div>
+                </a>
+                <a href="wheel.html" class="game-card">
+                    <div class="game-icon">🎡</div>
+                    <div class="game-name">Wheel</div>
+                </a>
+                <a href="stack.html" class="game-card">
+                    <div class="game-icon">🧱</div>
+                    <div class="game-name">Stack</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD MONEY MODAL -->
+    <div id="modal">
+        <div class="modal-box">
+            <h3>Wallet Deposit</h3>
+            <p style="color:var(--text-dim); font-size:12px;">Add fake balance to play</p>
+            <input type="number" id="depositAmount" placeholder="0.00">
+            <button class="btn-action" onclick="addFunds()">DEPOSIT</button>
+            <button style="background:transparent; color: var(--text-dim); border:none; margin-top:10px; cursor:pointer;" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // SHARED WALLET SYSTEM
+        function getBalance() { return parseFloat(localStorage.getItem('rainBalance')) || 0; }
+        function setBalance(n) { localStorage.setItem('rainBalance', n); document.getElementById('balance').innerText = '$' + n.toFixed(2); }
+        
+        // Init
+        if(localStorage.getItem('rainBalance') === null) setBalance(1000.00);
+        else setBalance(getBalance());
+
+        function openModal() { document.getElementById('modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function addFunds() {
+            let val = parseFloat(document.getElementById('depositAmount').value);
+            if(val > 0) { setBalance(getBalance() + val); closeModal(); }
+        }
+    </script>
+</body>
+</html>
