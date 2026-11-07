@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plinko - Rainbet</title>
+    <style>
+        :root { 
+            --bg-dark: #0f1219; 
+            --bg-panel: #1a202e; 
+            --primary: #00e701; 
+            --accent: #2f4553;
+            --text-muted: #8892a3;
+            --danger: #ef4444;
+        }
+
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        
+        /* --- SIDEBAR STYLE (MATCHES BLACKJACK & MINES) --- */
+        .sidebar { 
+            width: 240px; 
+            background: #131721; 
+            padding: 20px; 
+            border-right: 1px solid #232936; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box;
+        }
+        .logo { 
+            font-size: 26px; 
+            font-weight: 800; 
+            color: white; 
+            margin-bottom: 40px; 
+            text-decoration: none; 
+            display: block; 
+        }
+        .logo span { color: var(--primary); }
+        .nav-item { 
+            padding: 12px; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block; 
+            margin-bottom: 5px; 
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-item.active { color: white; background: rgba(0, 231, 1, 0.05); }
+
+        /* --- GAME LAYOUT --- */
+        .game-layout { flex: 1; display: flex; flex-direction: column; }
+        
+        header { 
+            height: 70px; 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding: 0 30px; 
+            background: #131721; 
+            border-bottom: 1px solid #232936; 
+            gap: 15px;
+        }
+
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+
+        /* --- CONTROLS --- */
+        .controls-panel { 
+            width: 300px; 
+            background: #1a202e; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            border-right: 1px solid #232936; 
+        }
+        .input-label { color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 5px; display: block; }
+        .input-box { background: #0f1219; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; display: flex; align-items: center; }
+        input, select { background: transparent; border: none; color: white; width: 100%; font-weight: 600; outline: none; }
+        select { background: #0f1219; cursor: pointer; color: white; }
+        
+        .btn-play { 
+            background: var(--primary); 
+            color: #000; 
+            border: none; 
+            padding: 15px; 
+            border-radius: 4px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            font-size: 16px; 
+            margin-top: auto; 
+            box-shadow: 0 4px 0 #00b301; 
+            text-transform: uppercase;
+        }
+        .btn-play:active { transform: translateY(2px); box-shadow: 0 2px 0 #00b301; }
+
+        /* --- STAGE --- */
+        .stage { 
+            flex: 1; 
+            background: radial-gradient(circle at center, #1f2a36 0%, #0f1219 100%); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            padding: 20px;
+        }
+        
+        .balance-display, .profit-display { 
+            background: #1a202e; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            border: 1px solid var(--accent); 
+            min-width: 100px; 
+            text-align: center; 
+        }
+
+        .profit-display { border-color: rgba(255,255,255,0.1); }
+        .profit-pos { color: var(--primary); }
+        .profit-neg { color: var(--danger); }
+
+        canvas { 
+            background: transparent; 
+            max-width: 100%;
+            max-height: 85vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item">💎 Mines</a>
+        <a href="plinko.html" class="nav-item active" style="color:white">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item">🧱 Stack</a>
+    </div>
+
+    <div class="game-layout">
+        <header>
+            <div class="profit-display" id="displayProfit">Profit: $0.00</div>
+            <div class="balance-display" id="displayBalance">$0.00</div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div>
+                    <label class="input-label">Bet Amount</label>
+                    <div class="input-box">
+                        <span style="color:var(--text-muted); margin-right:5px">$</span>
+                        <input type="number" id="bet" value="10.00">
+                    </div>
+                </div>
+                <div>
+                    <label class="input-label">Risk</label>
+                    <div class="input-box">
+                        <select id="risk">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="input-label">Rows</label>
+                    <div class="input-box">
+                        <select id="rows" disabled>
+                            <option>16</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-play" onclick="drop()">Drop Ball</button>
+            </div>
+
+            <div class="stage">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PROFIT LOGIC
+        let sessionProfit = 0;
+        function updateProfitDisplay() {
+            const el = document.getElementById('displayProfit');
+            el.innerText = `Profit: ${sessionProfit >= 0 ? '+' : ''}$${sessionProfit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            el.className = sessionProfit >= 0 ? 'profit-display profit-pos' : 'profit-display profit-neg';
+        }
+
+        // WALLET LOGIC
+        function getBal() { return parseFloat(localStorage.getItem('rainBalance')) || 0; }
+        function setBal(n) { 
+            localStorage.setItem('rainBalance', n.toFixed(2)); 
+            document.getElementById('displayBalance').innerText = '$' + n.toLocaleString(undefined, {minimumFractionDigits: 2}); 
+        }
+        setBal(getBal());
+
+        // PHYSICS & CANVAS
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const rows = 16;
+        const pegSize = 3;
+        const ballSize = 6;
+        const startX = 400;
+        const startY = 50;
+        const gap = 30; 
+
+        let balls = [];
+        let pegs = [];
+        
+        // Setup Pegs
+        for(let r=0; r<rows; r++) {
+            for(let c=0; c<=r+2; c++) {
+                let x = startX - ((r+2)*gap/2) + (c*gap);
+                let y = startY + (r*gap);
+                pegs.push({x, y});
+            }
+        }
+
+        const mults = [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110];
+        
+        function getColor(val) {
+            if(val >= 10) return '#ef4444'; 
+            if(val >= 2) return '#f59e0b'; 
+            return '#eab308'; 
+        }
+
+        function drop() {
+            let bet = parseFloat(document.getElementById('bet').value);
+            if(isNaN(bet) || bet > getBal() || bet <= 0) return alert('Invalid Bet Amount');
+            
+            sessionProfit -= bet; // Subtract bet from profit
+            updateProfitDisplay();
+            
+            setBal(getBal() - bet);
+
+            balls.push({
+                x: startX + (Math.random()*2-1), 
+                y: 20,
+                vx: 0, 
+                vy: 0,
+                active: true,
+                bet: bet
+            });
+        }
+
+        function update() {
+            ctx.clearRect(0,0,800,600);
+
+            // Draw Pegs
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for(let p of pegs) {
+                ctx.beginPath(); ctx.arc(p.x, p.y, pegSize, 0, 6.28); ctx.fill();
+            }
+
+            // Draw Buckets
+            let bottomY = startY + (rows * gap) + 10;
+            let count = rows + 1;
+            for(let i=0; i<count; i++) {
+                let x = startX - (count*gap/2) + (i*gap) + (gap/2);
+                let m = mults[i] || 1;
+                ctx.fillStyle = getColor(m);
+                // Rounded corner-ish look for buckets
+                ctx.beginPath();
+                ctx.roundRect(x - 12, bottomY, 24, 25, 4);
+                ctx.fill();
+                
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 9px Inter, Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(m+'x', x, bottomY + 16);
+            }
+
+            // Draw Balls
+            for(let b of balls) {
+                if(!b.active) continue;
+                
+                b.vy += 0.2; 
+                b.vx *= 0.99; 
+                b.x += b.vx;
+                b.y += b.vy;
+
+                for(let p of pegs) {
+                    let dx = b.x - p.x;
+                    let dy = b.y - p.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < pegSize + ballSize) {
+                        let angle = Math.atan2(dy, dx);
+                        let force = 1.5; 
+                        b.vx = Math.cos(angle) * force + (Math.random()-0.5); 
+                        b.vy = Math.sin(angle) * force;
+                        b.y += Math.sin(angle) * (pegSize+ballSize - dist);
+                    }
+                }
+
+                // Ball Glow Effect
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00e701';
+                ctx.fillStyle = '#00e701';
+                ctx.beginPath(); ctx.arc(b.x, b.y, ballSize, 0, 6.28); ctx.fill();
+                ctx.shadowBlur = 0; // Reset shadow
+
+                if(b.y > bottomY) {
+                    b.active = false;
+                    let totalW = count * gap;
+                    let left = startX - totalW/2;
+                    let idx = Math.floor((b.x - left) / gap);
+                    if(idx < 0) idx = 0; if(idx >= count) idx = count-1;
+                    
+                    let multiplier = mults[idx] || 0.3;
+                    let win = b.bet * multiplier;
+                    
+                    sessionProfit += win; // Add win to profit
+                    updateProfitDisplay();
+                    
+                    setBal(getBal() + win);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+        update();
+    </script>
+</body>
+</html>
