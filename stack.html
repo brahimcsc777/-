@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stack - Rainbet</title>
+    <style>
+        :root { 
+            --bg-dark: #0f1219; 
+            --bg-panel: #1a202e; 
+            --primary: #00e701; 
+            --accent: #2f4553; 
+            --win: #00e701; 
+            --loss: #ef4444; 
+            --text-muted: #8892a3;
+            --gold: #ffb800;
+        }
+        body { background: var(--bg-dark); color: white; font-family: 'Inter', sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+        .sidebar { width: 240px; background: #131721; padding: 20px; border-right: 1px solid #232936; display: flex; flex-direction: column; box-sizing: border-box; }
+        .logo { font-size: 26px; font-weight: 800; color: white; margin-bottom: 40px; text-decoration: none; display: block; }
+        .logo span { color: var(--primary); }
+        .nav-item { padding: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; display: block; margin-bottom: 5px; border-radius: 4px; transition: 0.2s; }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-item.active { color: white; background: rgba(0, 231, 1, 0.05); }
+
+        .game-layout { flex: 1; display: flex; flex-direction: column; }
+        header { height: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 0 30px; background: #131721; border-bottom: 1px solid #232936; gap: 15px; }
+        
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+        .controls-panel { width: 300px; background: #1a202e; padding: 25px; display: flex; flex-direction: column; gap: 15px; border-right: 1px solid #232936; }
+        
+        /* ACTION BUTTONS GROUP */
+        .action-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+        .input-label { 
+            color: var(--text-muted); 
+            font-size: 12px;           /* Increased from 11px */
+            font-weight: 700; 
+            margin-bottom: 5px; 
+            display: block; 
+        }
+        .input-box { 
+            background: #0f1219; 
+            border: 1px solid var(--accent); 
+            border-radius: 4px; 
+            padding: 10px;             /* Plinko uses 10px, Stack used 12px */
+            display: flex; 
+            align-items: center; 
+        }
+        .input-box input { 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            width: 100%; 
+            font-weight: 600; 
+            outline: none; 
+            font-family: 'Inter', sans-serif; /* Ensures font matches */
+        }
+        
+        .btn-play { 
+                background: var(--primary); 
+                color: #000; 
+                border: none; 
+                padding: 15px; 
+                border-radius: 4px; 
+                font-weight: 900; 
+                cursor: pointer; 
+                font-size: 16px; /* Increased to match Plinko */
+                box-shadow: 0 4px 0 #00b301; 
+                text-transform: uppercase;
+                transition: 0.1s;
+                width: 100%; /* Ensures it fills the control panel */
+            }
+        .btn-play:active { transform: translateY(2px); box-shadow: 0 2px 0 #00b301; }
+        .btn-play.cashout { background: var(--gold); box-shadow: 0 4px 0 #b38100; }
+
+        .stage { flex: 1; background: radial-gradient(circle at center, #1f2a36 0%, #0f1219 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 40px; position: relative; }
+        
+        .tower-container { width: 350px; height: 520px; border-bottom: 4px solid var(--accent); position: relative; }
+        .block { height: 30px; background: var(--primary); position: absolute; border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; }
+        .block.moving { background: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        
+        /* GOAL LINE */
+        .goal-line { position: absolute; width: 100%; height: 2px; background: repeating-linear-gradient(90deg, transparent, transparent 10px, var(--gold) 10px, var(--gold) 20px); top: 32px; z-index: 10; opacity: 0.6; }
+        .goal-label { position: absolute; right: -90px; top: 22px; color: var(--gold); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+
+        .stat-card { background: #1a202e; padding: 8px 16px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent); min-width: 110px; text-align: center; }
+        .stat-label { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item">💎 Mines</a>
+        <a href="plinko.html" class="nav-item">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item active">🧱 Stack</a>
+    </div>
+
+    <div class="game-layout">
+        <header>
+            <div class="stat-card"><span class="stat-label">Multiplier</span><span id="liveMult" style="color:var(--primary)">1.00x</span></div>
+            <div class="stat-card"><span class="stat-label">Balance</span><span id="displayBalance">$0.00</span></div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div>
+                    <label class="input-label">Bet Amount</label>
+                    <div class="input-box"><span style="color:var(--text-muted); margin-right:5px">$</span><input type="number" id="bet" value="10.00" step="1"></div>
+                </div>
+
+                <div class="action-group">
+                    <button class="btn-play cashout" id="cashBtn" style="visibility:hidden;" onclick="cashout()">Cash Out</button>
+                    
+                    <button class="btn-play" id="mainBtn" onclick="handleInput()">Bet</button>
+                </div>
+            </div>
+
+            <div class="stage">
+                <div class="tower-container" id="tower">
+                    <div class="goal-line"></div>
+                    <div class="goal-label">50x Bonus</div>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOAL_LEVEL = 15;
+        let balance = parseFloat(localStorage.getItem('rainBalance')) || 1000;
+        let active = false;
+        let currentLevel = 0;
+        let blockWidth = 50; 
+        let currentLeft = 0;
+        let direction = 1;
+        let gameInterval;
+        let speed = 15;
+        let lastLeft = 25; 
+        let currentBet = 0;
+
+        function setBal(n) { 
+            balance = n; 
+            localStorage.setItem('rainBalance', n.toFixed(2)); 
+            document.getElementById('displayBalance').innerText = '$' + n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
+        }
+        setBal(balance);
+
+        function getMultiplier(lvl) {
+            if (lvl === 0) return 0.00;
+            if (lvl >= GOAL_LEVEL) return 50.00;
+            return lvl <= 5 ? (1 + lvl * 0.15) : (1.75 * Math.pow(1.25, lvl - 5));
+        }
+
+        function handleInput() {
+            if (!active) startGame();
+            else dropBlock();
+        }
+
+        function startGame() {
+            currentBet = parseFloat(document.getElementById('bet').value);
+            if(isNaN(currentBet) || currentBet > balance || currentBet <= 0) return alert('Invalid Bet');
+            
+            setBal(balance - currentBet);
+            active = true; currentLevel = 0; blockWidth = 50; lastLeft = 25; speed = 15;
+            
+            document.getElementById('tower').innerHTML = '<div class="goal-line"></div><div class="goal-label">50x Bonus</div>';
+            document.getElementById('mainBtn').innerText = 'STACK';
+            document.getElementById('cashBtn').style.visibility = 'visible';
+            document.getElementById('cashBtn').innerText = 'CASH OUT $0.00';
+            spawnBlock();
+        }
+
+        function spawnBlock() {
+            const block = document.createElement('div');
+            block.className = 'block moving';
+            block.id = 'activeBlock';
+            block.style.width = blockWidth + '%';
+            block.style.bottom = (currentLevel * 32) + 'px';
+            document.getElementById('tower').appendChild(block);
+            
+            currentLeft = 0;
+            gameInterval = setInterval(() => {
+                currentLeft += (1.8 * direction);
+                if (currentLeft > (100 - blockWidth) || currentLeft < 0) direction *= -1;
+                block.style.left = currentLeft + '%';
+            }, speed);
+        }
+
+        function dropBlock() {
+            clearInterval(gameInterval);
+            const block = document.getElementById('activeBlock');
+            block.id = ''; block.classList.remove('moving');
+
+            if (currentLevel > 0) {
+                let diff = currentLeft - lastLeft;
+                let overlap = blockWidth - Math.abs(diff);
+
+                if (overlap <= 1) return endGame(false); // If too small, you lose
+
+                blockWidth = overlap;
+                if (diff > 0) lastLeft = currentLeft; 
+                block.style.width = blockWidth + '%';
+                block.style.left = lastLeft + '%';
+            } else {
+                lastLeft = currentLeft;
+            }
+
+            currentLevel++;
+            let mult = getMultiplier(currentLevel);
+            document.getElementById('liveMult').innerText = mult.toFixed(2) + 'x';
+            document.getElementById('cashBtn').innerText = `CASH OUT $${(currentBet * mult).toFixed(2)}`;
+
+            if (currentLevel >= GOAL_LEVEL) {
+                cashout();
+            } else {
+                speed = Math.max(5, speed - 0.6);
+                spawnBlock();
+            }
+        }
+
+        function cashout() {
+            if (!active || currentLevel === 0) return;
+            let win = currentBet * getMultiplier(currentLevel);
+            setBal(balance + win);
+            endGame(true);
+        }
+
+        function endGame(won) {
+            active = false; 
+            clearInterval(gameInterval);
+            document.getElementById('mainBtn').innerText = 'BET';
+            document.getElementById('cashBtn').style.visibility = 'hidden';
+            if (!won) {
+                document.getElementById('liveMult').innerText = '0.00x';
+                const activeB = document.getElementById('activeBlock');
+                if(activeB) activeB.style.backgroundColor = 'var(--loss)';
+            }
+        }
+    </script>
+</body>
+</html>
