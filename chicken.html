@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chicken - Rainbet</title>
+    <style>
+        :root { 
+            --bg-dark: #0f1219; 
+            --bg-panel: #1a202e; 
+            --primary: #00e701; 
+            --accent: #2f4553; 
+            --win: #00e701; 
+            --loss: #ef4444; 
+            --text-muted: #8892a3;
+        }
+
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        
+        /* SIDEBAR */
+        .sidebar { 
+            width: 240px; 
+            background: #131721; 
+            padding: 20px; 
+            border-right: 1px solid #232936; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box;
+        }
+        .logo { font-size: 26px; font-weight: 800; color: white; margin-bottom: 40px; text-decoration: none; display: block; }
+        .logo span { color: var(--primary); }
+        .nav-item { 
+            padding: 12px; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block; 
+            margin-bottom: 5px; 
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-item.active { color: white; background: rgba(0, 231, 1, 0.05); }
+
+        .game-layout { flex: 1; display: flex; flex-direction: column; }
+        
+        header { 
+            height: 70px; 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding: 0 30px; 
+            background: #131721; 
+            border-bottom: 1px solid #232936; 
+        }
+
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+
+        /* CONTROLS */
+        .controls-panel { 
+            width: 300px; 
+            background: #1a202e; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            border-right: 1px solid #232936; 
+        }
+        .input-label { color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 5px; display: block; }
+        .input-box { background: #0f1219; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; display: flex; align-items: center; }
+        .input-box input { background: transparent; border: none; color: white; width: 100%; font-weight: 600; outline: none; }
+        
+        .difficulty-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+        .diff-opt { 
+            padding: 10px; 
+            text-align: center; 
+            cursor: pointer; 
+            background: #0f1219; 
+            border: 1px solid var(--accent);
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: var(--text-muted); 
+        }
+        .diff-opt.active { background: var(--accent); color: white; }
+        
+        .btn-play { background: var(--primary); color: #000; border: none; padding: 15px; border-radius: 4px; font-weight: 900; cursor: pointer; font-size: 16px; box-shadow: 0 4px 0 #00b301; text-transform: uppercase; width: 100%; }
+        .btn-play:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        
+        .btn-cashout { 
+            background: #ffb800; 
+            box-shadow: 0 4px 0 #b38100; 
+            margin-top: 10px;
+            display: none; 
+        }
+
+        /* STAGE */
+        .stage { flex: 1; background: #0f1219; display: flex; align-items: center; justify-content: center; position: relative; }
+        
+        #msg { position: absolute; top: 40px; font-weight: 800; font-size: 28px; z-index: 10; display: none; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+
+        .road {
+            width: 700px;
+            height: 400px;
+            background: #1a202e;
+            position: relative;
+            display: flex;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+            overflow: hidden;
+        }
+
+        .sidewalk { width: 80px; background: #2f4553; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; position: relative;}
+        .lane { 
+            flex: 1; 
+            border-right: 1px dashed rgba(255,255,255,0.1); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-end;
+            padding-bottom: 20px;
+        }
+        
+        .multiplier-tag {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            border: 1px solid var(--accent);
+            transition: 0.3s;
+        }
+
+        .lane.active-lane .multiplier-tag { color: var(--primary); border-color: var(--primary); font-weight: bold; transform: scale(1.1); }
+
+        .chicken { font-size: 42px; position: absolute; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 5; transform: scaleX(-1); }
+        .car { font-size: 40px; position: absolute; z-index: 4; }
+        
+        /* Progress Marker */
+        .barrier { font-size: 24px; position: absolute; top: 130px; animation: popIn 0.3s ease-out forwards; z-index: 3; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stat-card { background: #1a202e; padding: 8px 16px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent); min-width: 120px; text-align: center; }
+        .stat-label { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item">💎 Mines</a>
+        <a href="plinko.html" class="nav-item">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item active">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item">🧱 Stack</a>
+    </div>
+
+    <div class="game-layout">
+        <header>
+            <div class="stat-card">
+                <span class="stat-label">Balance</span>
+                <span id="displayBalance">$0.00</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div>
+                    <label class="input-label">Bet Amount</label>
+                    <div class="input-box"><span style="color:var(--text-muted); margin-right:5px">$</span><input type="number" id="bet" value="10.00" step="1"></div>
+                </div>
+                <div>
+                    <label class="input-label">Difficulty (Traffic Density)</label>
+                    <div class="difficulty-selector">
+                        <div class="diff-opt active" onclick="setDiff(1.2, this)">Easy</div>
+                        <div class="diff-opt" onclick="setDiff(1.6, this)">Medium</div>
+                        <div class="diff-opt" onclick="setDiff(2.1, this)">Hard</div>
+                        <div class="diff-opt" onclick="setDiff(3.0, this)">Extreme</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: auto;">
+                    <button class="btn-play" id="mainBtn" onclick="handleBet()">Bet</button>
+                    <button class="btn-play btn-cashout" id="cashoutBtn" onclick="cashout()">Cashout</button>
+                </div>
+            </div>
+
+            <div class="stage">
+                <div id="msg">YOU DIED!</div>
+                <div class="road" id="road">
+                    <div class="sidewalk">🥚</div>
+                    <div class="lane" id="lane-0"><div class="multiplier-tag" id="m-0">1.20x</div></div>
+                    <div class="lane" id="lane-1"><div class="multiplier-tag" id="m-1">1.60x</div></div>
+                    <div class="lane" id="lane-2"><div class="multiplier-tag" id="m-2">2.44x</div></div>
+                    <div class="lane" id="lane-3"><div class="multiplier-tag" id="m-3">3.84x</div></div>
+                    <div class="lane" id="lane-4"><div class="multiplier-tag" id="m-4">5.12x</div></div>
+                    <div class="sidewalk" style="background: #00e70111;">🏁</div>
+                    
+                    <div id="chicken" class="chicken" style="left: 20px; top: 180px;">🐥</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let balance = parseFloat(localStorage.getItem('rainBalance')) || 1000;
+        let active = false;
+        let currentLane = -1; 
+        let difficulty = 1.2;
+        let betAmount = 0;
+        let multipliers = [1.20, 1.60, 2.44, 3.84, 5.12];
+        const carEmojis = ['🚗', '🚕', '🚙', '🏎️', '🚓'];
+
+        function updateBal() {
+            document.getElementById('displayBalance').innerText = '$' + balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+            localStorage.setItem('rainBalance', balance.toFixed(2));
+        }
+        updateBal();
+
+        function setDiff(val, el) {
+            if(active) return;
+            difficulty = val;
+            document.querySelectorAll('.diff-opt').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+            
+            for(let i=0; i<5; i++) {
+                let m = (Math.pow(difficulty, i + 1)).toFixed(2);
+                multipliers[i] = parseFloat(m);
+                document.getElementById(`m-${i}`).innerText = m + 'x';
+            }
+        }
+
+        function handleBet() {
+            if(!active) {
+                betAmount = parseFloat(document.getElementById('bet').value);
+                if(isNaN(betAmount) || betAmount > balance || betAmount <= 0) return;
+
+                balance -= betAmount;
+                updateBal();
+                
+                active = true;
+                currentLane = -1;
+                document.getElementById('mainBtn').innerText = 'Cross Lane';
+                document.getElementById('bet').disabled = true;
+                document.getElementById('msg').style.display = 'none';
+                resetGameVisuals();
+            } else {
+                moveForward();
+            }
+        }
+
+        function resetGameVisuals() {
+            const c = document.getElementById('chicken');
+            c.style.left = '20px';
+            c.style.top = '180px';
+            c.innerText = '🐥';
+            document.querySelectorAll('.lane').forEach(l => l.classList.remove('active-lane'));
+            document.querySelectorAll('.car, .barrier').forEach(el => el.remove());
+            document.getElementById('cashoutBtn').style.display = 'none';
+        }
+
+        function moveForward() {
+            currentLane++;
+            const chicken = document.getElementById('chicken');
+            const targetLane = document.getElementById(`lane-${currentLane}`);
+            const roadRect = document.getElementById('road').getBoundingClientRect();
+            const laneRect = targetLane.getBoundingClientRect();
+
+            // Chicken Jump
+            chicken.style.left = (laneRect.left - roadRect.left + (laneRect.width/2) - 21) + 'px';
+            
+            let deathChance = 0.15 * difficulty; 
+            
+            setTimeout(() => {
+                if(Math.random() < deathChance) {
+                    hitByCar();
+                } else {
+                    // Success!
+                    targetLane.classList.add('active-lane');
+                    
+                    // Add Barrier/Cone
+                    const barrier = document.createElement('div');
+                    barrier.className = 'barrier';
+                    barrier.innerText = '🚧'; // You can change this to 🚧 or 🧱
+                    targetLane.appendChild(barrier);
+
+                    document.getElementById('cashoutBtn').style.display = 'block';
+                    let currentProfit = (betAmount * multipliers[currentLane]).toFixed(2);
+                    document.getElementById('cashoutBtn').innerText = `Cashout $${currentProfit}`;
+                    
+                    if(currentLane === 4) {
+                        setTimeout(cashout, 400); 
+                    }
+                }
+            }, 300);
+        }
+
+        function hitByCar() {
+            const lane = document.getElementById(`lane-${currentLane}`);
+            const car = document.createElement('div');
+            car.className = 'car';
+            car.innerText = carEmojis[Math.floor(Math.random() * carEmojis.length)];
+            car.style.top = '-60px';
+            car.style.left = '50%';
+            car.style.transform = 'translateX(-50%)';
+            lane.appendChild(car);
+
+            setTimeout(() => {
+                car.style.transition = "top 0.3s ease-in";
+                car.style.top = '170px';
+                setTimeout(() => {
+                    document.getElementById('chicken').innerText = '💥';
+                    showEndMsg("WRECKED!", "#ef4444");
+                    endGame();
+                }, 300);
+            }, 50);
+        }
+
+        function cashout() {
+            if(!active || currentLane < 0) return;
+            let win = betAmount * multipliers[currentLane];
+            balance += win;
+            updateBal();
+            
+            const chicken = document.getElementById('chicken');
+            chicken.style.left = '640px'; 
+            showEndMsg(`+$${win.toFixed(2)}`, "#00e701");
+            endGame();
+        }
+
+        function showEndMsg(txt, color) {
+            const m = document.getElementById('msg');
+            m.innerText = txt;
+            m.style.color = color;
+            m.style.display = 'block';
+        }
+
+        function endGame() {
+            active = false;
+            document.getElementById('mainBtn').innerText = 'Bet';
+            document.getElementById('bet').disabled = false;
+            document.getElementById('cashoutBtn').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
