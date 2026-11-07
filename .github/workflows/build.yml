@@ -1,0 +1,86 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.5' }
+      - name: Create Android project
+        run: |
+          mkdir -p app/src/main/assets app/src/main/java/com/demo/gamesim
+          cp *.html app/src/main/assets/
+          sed -i 's#Rain<span>bet</span>#Game<span>Sim</span>#; s/Rainbet Originals/Originals/; s/Rainbet Simulator/Game Simulator/; s/ - Rainbet/ - Game Simulator/; s/RAINBET/GAMESIM/' app/src/main/assets/*.html
+          cat > settings.gradle <<'EOF2'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "GameSim"
+          include(":app")
+          EOF2
+          cat > build.gradle <<'EOF2'
+          plugins { id 'com.android.application' version '8.2.2' apply false }
+          EOF2
+          cat > gradle.properties <<'EOF2'
+          org.gradle.jvmargs=-Xmx2g
+          EOF2
+          cat > app/build.gradle <<'EOF2'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.demo.gamesim'
+              compileSdk 34
+              defaultConfig { applicationId 'com.demo.gamesim'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          }
+          EOF2
+          cat > app/src/main/AndroidManifest.xml <<'EOF2'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:label="Game Simulator" android:theme="@android:style/Theme.Material.NoActionBar" android:usesCleartextTraffic="false">
+                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF2
+          cat > app/src/main/java/com/demo/gamesim/MainActivity.java <<'EOF2'
+          package com.demo.gamesim;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          public class MainActivity extends Activity {
+              WebView web;
+              @Override protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  web = new WebView(this);
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setUseWideViewPort(true);
+                  s.setLoadWithOverviewMode(true);
+                  s.setBuiltInZoomControls(true);
+                  s.setDisplayZoomControls(false);
+                  web.setWebViewClient(new WebViewClient());
+                  setContentView(web);
+                  web.loadUrl("file:///android_asset/index.html");
+              }
+              @Override public void onBackPressed() {
+                  if (web.canGoBack()) web.goBack(); else super.onBackPressed();
+              }
+          }
+          EOF2
+      - run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: game-simulator-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
