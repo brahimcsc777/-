@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mines - Rainbet</title>
+    <style>
+        :root { 
+            --bg-dark: #0f1219; 
+            --bg-panel: #1a202e; 
+            --primary: #00e701; 
+            --accent: #2f4553; 
+            --win: #00e701; 
+            --loss: #ef4444; 
+            --text-muted: #8892a3;
+        }
+
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        
+        /* --- SIDEBAR STYLE (MATCHES BLACKJACK) --- */
+        .sidebar { 
+            width: 240px; 
+            background: #131721; 
+            padding: 20px; 
+            border-right: 1px solid #232936; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box;
+        }
+        .logo { 
+            font-size: 26px; 
+            font-weight: 800; 
+            color: white; 
+            margin-bottom: 40px; 
+            text-decoration: none; 
+            display: block; 
+        }
+        .logo span { color: var(--primary); }
+        .nav-item { 
+            padding: 12px; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block; 
+            margin-bottom: 5px; 
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-item.active { color: white; background: rgba(0, 231, 1, 0.05); }
+
+        /* --- GAME LAYOUT --- */
+        .game-layout { flex: 1; display: flex; flex-direction: column; }
+        
+        header { 
+            height: 70px; 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding: 0 30px; 
+            background: #131721; 
+            border-bottom: 1px solid #232936; 
+            gap: 15px;
+        }
+
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+
+        /* --- CONTROLS --- */
+        .controls-panel { 
+            width: 300px; 
+            background: #1a202e; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            border-right: 1px solid #232936; 
+        }
+        .input-label { color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 5px; display: block; }
+        .input-box { background: #0f1219; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; display: flex; align-items: center; }
+        .input-box input { background: transparent; border: none; color: white; width: 100%; font-weight: 600; outline: none; }
+        
+        .mine-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; background: #0f1219; padding: 5px; border-radius: 4px; border: 1px solid var(--accent); }
+        .mine-opt { padding: 8px 0; text-align: center; cursor: pointer; border-radius: 3px; font-size: 14px; font-weight: bold; color: var(--text-muted); transition: 0.2s; }
+        .mine-opt.active { background: var(--accent); color: white; }
+        
+        .btn-play { background: var(--primary); color: #000; border: none; padding: 15px; border-radius: 4px; font-weight: 900; cursor: pointer; font-size: 16px; margin-top: auto; box-shadow: 0 4px 0 #00b301; transition: 0.1s; text-transform: uppercase; }
+        .btn-play:active { transform: translateY(2px); box-shadow: 0 2px 0 #00b301; }
+        .btn-play.btn-cashout { background: #ffb800; box-shadow: 0 4px 0 #b38100; }
+
+        /* --- STAGE --- */
+        .stage { flex: 1; background: radial-gradient(circle at center, #1f2a36 0%, #0f1219 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        .stat-card { background: #1a202e; padding: 8px 16px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent); min-width: 100px; text-align: center; }
+        .stat-label { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; margin-bottom: 2px; }
+        .profit-pos { color: var(--win); }
+        .profit-neg { color: var(--loss); }
+        
+        .live-win { font-size: 28px; font-weight: 900; color: var(--win); margin-bottom: 20px; height: 35px; }
+
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; width: 450px; height: 450px; }
+        .tile { background: var(--accent); border-radius: 8px; cursor: pointer; transition: 0.1s; box-shadow: 0 4px 0 #1c2b36; display: flex; justify-content: center; align-items: center; font-size: 24px; }
+        .tile:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .tile.revealed { background: #0f1219; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); cursor: default; font-size: 32px; transform: none; }
+        .tile.gem { color: var(--win); text-shadow: 0 0 15px rgba(0,231,1,0.5); }
+        .tile.bomb { color: var(--loss); background: #2a1010; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item active" style="color:white">💎 Mines</a>
+        <a href="plinko.html" class="nav-item">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item">🧱 Stack</a>
+    </div>
+
+    <div class="game-layout">
+        <header>
+            <div class="stat-card">
+                <span class="stat-label">Session Profit</span>
+                <span id="sessionProfit" class="">$0.00</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Balance</span>
+                <span id="displayBalance">$0.00</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div>
+                    <label class="input-label">Bet Amount</label>
+                    <div class="input-box">
+                        <span style="color:var(--text-muted); margin-right:5px">$</span>
+                        <input type="number" id="bet" value="10.00" step="1">
+                    </div>
+                </div>
+                <div>
+                    <label class="input-label">Mines</label>
+                    <div class="mine-selector" id="mineOpts">
+                        <div class="mine-opt" onclick="setMines(1, this)">1</div>
+                        <div class="mine-opt active" onclick="setMines(3, this)">3</div>
+                        <div class="mine-opt" onclick="setMines(5, this)">5</div>
+                        <div class="mine-opt" onclick="setMines(10, this)">10</div>
+                        <div class="mine-opt" onclick="setMines(24, this)">24</div>
+                    </div>
+                </div>
+                <button class="btn-play" id="mainBtn" onclick="handleButtonClick()">Bet</button>
+            </div>
+
+            <div class="stage">
+                <div class="live-win" id="liveWinDisplay"></div>
+                <div class="grid" id="grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let minesCount = 3;
+        let currentBet = 0;
+        let active = false;
+        let revealedGems = 0;
+        let gridData = [];
+        let sessionProfit = 0;
+
+        // Initialize Balance
+        if(!localStorage.getItem('rainBalance')) localStorage.setItem('rainBalance', 1000);
+        
+        function getBal() { return parseFloat(localStorage.getItem('rainBalance')); }
+        function setBal(n) { 
+            localStorage.setItem('rainBalance', n.toFixed(2)); 
+            document.getElementById('displayBalance').innerText = '$' + n.toLocaleString(undefined, {minimumFractionDigits: 2}); 
+        }
+
+        function updateSessionProfit(change) {
+            sessionProfit += change;
+            const el = document.getElementById('sessionProfit');
+            el.innerText = (sessionProfit >= 0 ? '+' : '') + '$' + sessionProfit.toFixed(2);
+            el.className = sessionProfit >= 0 ? 'profit-pos' : 'profit-neg';
+        }
+        
+        setBal(getBal());
+
+        function initGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            for(let i=0; i<25; i++) {
+                let t = document.createElement('div');
+                t.className = 'tile';
+                t.id = `t-${i}`;
+                t.onclick = () => clickTile(i);
+                gridEl.appendChild(t);
+            }
+        }
+        initGrid();
+
+        function setMines(n, el) {
+            if(active) return;
+            minesCount = n;
+            document.querySelectorAll('.mine-opt').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function handleButtonClick() {
+            if (!active) startNewGame();
+            else cashout();
+        }
+
+        function startNewGame() {
+            currentBet = parseFloat(document.getElementById('bet').value);
+            if(isNaN(currentBet) || currentBet > getBal() || currentBet <= 0) return alert('Invalid Bet');
+
+            setBal(getBal() - currentBet);
+            updateSessionProfit(-currentBet);
+            
+            active = true;
+            revealedGems = 0;
+            gridData = Array(25).fill('gem');
+            let planted = 0;
+            while(planted < minesCount) {
+                let r = Math.floor(Math.random() * 25);
+                if(gridData[r] === 'gem') { gridData[r] = 'bomb'; planted++; }
+            }
+
+            initGrid();
+            document.getElementById('mainBtn').innerText = 'Cashout $0.00';
+            document.getElementById('mainBtn').classList.add('btn-cashout');
+            document.getElementById('bet').disabled = true;
+            document.getElementById('liveWinDisplay').innerText = '';
+        }
+
+        function clickTile(idx) {
+            if(!active) return;
+            let el = document.getElementById(`t-${idx}`);
+            if(el.classList.contains('revealed')) return;
+
+            if(gridData[idx] === 'bomb') {
+                el.classList.add('revealed', 'bomb');
+                el.innerHTML = '💣';
+                endGame(false);
+            } else {
+                el.classList.add('revealed', 'gem');
+                el.innerHTML = '💎';
+                revealedGems++;
+                
+                let currentVal = currentBet * calculateMultiplier();
+                document.getElementById('mainBtn').innerText = `Cashout $${currentVal.toFixed(2)}`;
+                document.getElementById('liveWinDisplay').innerText = `${calculateMultiplier().toFixed(2)}x`;
+                
+                if(revealedGems === (25 - minesCount)) cashout();
+            }
+        }
+
+        function calculateMultiplier() {
+            let prob = 1.0;
+            for (let i = 0; i < revealedGems; i++) {
+                prob *= (25 - minesCount - i) / (25 - i);
+            }
+            // 0.97 represents a 3% house edge
+            return (1 / prob) * 0.97;
+        }
+
+        function cashout() {
+            if(!active || revealedGems === 0) return;
+            let winAmount = currentBet * calculateMultiplier();
+            setBal(getBal() + winAmount);
+            updateSessionProfit(winAmount);
+            endGame(true);
+        }
+
+        function endGame(won) {
+            active = false;
+            const btn = document.getElementById('mainBtn');
+            btn.innerText = 'Bet';
+            btn.classList.remove('btn-cashout');
+            document.getElementById('bet').disabled = false;
+
+            gridData.forEach((type, i) => {
+                let el = document.getElementById(`t-${i}`);
+                if(!el.classList.contains('revealed')) {
+                    el.classList.add('revealed');
+                    el.style.opacity = '0.3';
+                    el.innerHTML = (type === 'bomb') ? '💣' : '💎';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
