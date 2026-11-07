@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wheel - Rainbet</title>
+    <style>
+        :root { 
+            --bg-dark: #0f1219; 
+            --bg-panel: #1a202e; 
+            --primary: #00e701; 
+            --accent: #2f4553; 
+            --win: #00e701; 
+            --loss: #ef4444; 
+            --text-muted: #8892a3;
+        }
+
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        
+        .sidebar { 
+            width: 240px; 
+            background: #131721; 
+            padding: 20px; 
+            border-right: 1px solid #232936; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box;
+        }
+        .logo { font-size: 26px; font-weight: 800; color: white; margin-bottom: 40px; text-decoration: none; display: block; }
+        .logo span { color: var(--primary); }
+        .nav-item { 
+            padding: 12px; color: var(--text-muted); text-decoration: none; 
+            font-weight: 600; display: block; margin-bottom: 5px; border-radius: 4px; transition: 0.2s;
+        }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-item.active { color: white; background: rgba(0, 231, 1, 0.05); }
+
+        .game-layout { flex: 1; display: flex; flex-direction: column; }
+        
+        header { 
+            height: 70px; display: flex; justify-content: flex-end; 
+            align-items: center; padding: 0 30px; background: #131721; border-bottom: 1px solid #232936; 
+        }
+
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+
+        .controls-panel { 
+            width: 300px; background: #1a202e; padding: 25px; 
+            display: flex; flex-direction: column; gap: 20px; border-right: 1px solid #232936; 
+        }
+        
+        .input-label { color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 5px; display: block; }
+        .input-box { background: #0f1219; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; display: flex; align-items: center; }
+        .input-box input { background: transparent; border: none; color: white; width: 100%; font-weight: 600; outline: none; }
+        
+        .btn-spin { 
+            background: var(--primary); color: #000; border: none; padding: 15px; 
+            border-radius: 4px; font-weight: 900; cursor: pointer; font-size: 16px; 
+            margin-top: auto; box-shadow: 0 4px 0 #00b301; text-transform: uppercase; 
+        }
+        .btn-spin:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+        .stage { flex: 1; background: #0f1219; display: flex; align-items: center; justify-content: center; position: relative; }
+        
+        /* RESULT BOX */
+        .result-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-panel);
+            border: 2px solid var(--accent);
+            padding: 25px;
+            border-radius: 12px;
+            z-index: 100;
+            text-align: center;
+            display: none;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            min-width: 180px;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .res-mult { font-size: 42px; font-weight: 900; display: block; line-height: 1; margin-bottom: 5px; }
+        .res-profit { font-size: 18px; font-weight: 700; color: var(--text-muted); }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* WHEEL */
+        .wheel-outer { position: relative; width: 450px; height: 450px; }
+        canvas { border-radius: 50%; border: 8px solid var(--accent); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        .pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 30px; height: 40px; background: #fff; clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+            z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .stat-card { background: #1a202e; padding: 8px 16px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent); min-width: 120px; text-align: center; }
+        .stat-label { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="index.html" class="logo">Rain<span>bet</span></a>
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="blackjack.html" class="nav-item">♠️ Blackjack</a>
+        <a href="mines.html" class="nav-item">💎 Mines</a>
+        <a href="plinko.html" class="nav-item">🔻 Plinko</a>
+        <a href="chicken.html" class="nav-item">🐔 Chicken</a>
+        <a href="wheel.html" class="nav-item active">🎡 Wheel</a>
+        <a href="stack.html" class="nav-item">🧱 Stack</a>
+    </div>
+
+    <div class="game-layout">
+        <header>
+            <div class="stat-card">
+                <span class="stat-label">Balance</span>
+                <span id="displayBalance">$0.00</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div>
+                    <label class="input-label">Bet Amount</label>
+                    <div class="input-box"><span style="color:var(--text-muted); margin-right:5px">$</span><input type="number" id="bet" value="10.00" step="1"></div>
+                </div>
+                
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                    Multiplier Wheel Logic:
+                    <br><br>
+                    <span style="color: #ef4444;">● Red: 0x - 0.5x</span><br>
+                    <span style="color: #fff;">● White: 1.2x - 1.5x</span><br>
+                    <span style="color: var(--primary);">● Green: 2.0x - 10x</span>
+                </p>
+
+                <button class="btn-spin" id="spinBtn" onclick="spin()">Spin Wheel</button>
+            </div>
+
+            <div class="stage">
+                <div id="resultBox" class="result-box">
+                    <span id="resMult" class="res-mult">2.00x</span>
+                    <span id="resProfit" class="res-profit">+$10.00</span>
+                </div>
+
+                <div class="wheel-outer">
+                    <div class="pointer"></div>
+                    <canvas id="wheelCanvas" width="450" height="450"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const multipliers = [0, 1.5, 0.5, 2, 0, 1.2, 0.1, 5, 0, 1.5, 0.5, 10, 0, 1.2, 0.2, 2];
+        const colors = ['#ef4444', '#ffffff', '#232936', '#00e701', '#ef4444', '#ffffff', '#232936', '#00e701', '#ef4444', '#ffffff', '#232936', '#ffb800', '#ef4444', '#ffffff', '#232936', '#00e701'];
+        
+        let currentAngle = 0;
+        let isSpinning = false;
+        let balance = parseFloat(localStorage.getItem('rainBalance')) || 1000;
+
+        function updateBal() {
+            document.getElementById('displayBalance').innerText = '$' + balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+            localStorage.setItem('rainBalance', balance.toFixed(2));
+        }
+        updateBal();
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+            const slice = (Math.PI * 2) / multipliers.length;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            multipliers.forEach((m, i) => {
+                const angle = currentAngle + i * slice;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + slice);
+                ctx.fill();
+                ctx.strokeStyle = '#131721';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + slice / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = (colors[i] === '#ffffff' || colors[i] === '#00e701') ? "#000" : "#fff";
+                ctx.font = "bold 16px Inter";
+                ctx.fillText(m + "x", radius - 20, 5);
+                ctx.restore();
+            });
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            const bet = parseFloat(document.getElementById('bet').value);
+            if (isNaN(bet) || bet > balance || bet <= 0) return;
+
+            balance -= bet;
+            updateBal();
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            document.getElementById('resultBox').style.display = 'none';
+
+            let spinRotation = Math.random() * 360 + 2880; // 8 full spins + random
+            let duration = 5000;
+            let start = null;
+
+            function animate(timestamp) {
+                if (!start) start = timestamp;
+                let progress = timestamp - start;
+                let easeOut = 1 - Math.pow(1 - (progress / duration), 4);
+                
+                currentAngle = (easeOut * spinRotation) * (Math.PI / 180);
+                drawWheel();
+
+                if (progress < duration) {
+                    requestAnimationFrame(animate);
+                } else {
+                    finishSpin(bet);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function finishSpin(bet) {
+            isSpinning = false;
+            document.getElementById('spinBtn').disabled = false;
+
+            const slice = (Math.PI * 2) / multipliers.length;
+            let normalizedAngle = (currentAngle + Math.PI / 2) % (Math.PI * 2);
+            let index = multipliers.length - Math.floor(normalizedAngle / slice) - 1;
+            if (index < 0) index = multipliers.length + index;
+
+            const winMult = multipliers[index];
+            const payout = bet * winMult;
+            const profit = payout - bet;
+            
+            balance += payout;
+            updateBal();
+
+            // SHOW RESULT BOX
+            const box = document.getElementById('resultBox');
+            const mText = document.getElementById('resMult');
+            const pText = document.getElementById('resProfit');
+
+            mText.innerText = winMult.toFixed(2) + 'x';
+            mText.style.color = winMult >= 1 ? 'var(--primary)' : 'var(--loss)';
+            
+            pText.innerText = (payout >= bet ? '+$' : '-$') + Math.abs(payout - bet).toFixed(2);
+            pText.style.color = payout >= bet ? 'white' : 'var(--loss)';
+
+            box.style.display = 'block';
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
